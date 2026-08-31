@@ -21,14 +21,36 @@ const {
   loadFromUrl,
 } = useShareLink(content)
 
+const isReadingView = computed(() => isSharedView.value && !showEditor.value)
+
+watch(isReadingView, (reading) => {
+  if (!import.meta.client)
+    return
+  document.documentElement.classList.toggle('reading-mode', reading)
+  document.body.classList.toggle('reading-mode', reading)
+}, { immediate: true })
+
+onUnmounted(() => {
+  if (!import.meta.client)
+    return
+  document.documentElement.classList.remove('reading-mode')
+  document.body.classList.remove('reading-mode')
+})
+
 onMounted(() => {
   loadFromUrl()
 })
 </script>
 
 <template>
-  <div class="flex flex-col h-screen">
-    <header class="flex items-center justify-between gap-3 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+  <div
+    class="flex flex-col h-screen"
+    :class="isReadingView ? 'bg-stone-50 dark:bg-stone-950' : ''"
+  >
+    <header
+      class="flex items-center justify-between gap-3 px-3 py-2 border-b border-gray-200 dark:border-gray-700"
+      :class="isReadingView ? 'border-b-transparent bg-transparent' : ''"
+    >
       <span class="text-sm font-medium text-teal-800 dark:text-teal-300">one-page</span>
       <div class="flex items-center gap-2">
         <span v-if="copyError" class="text-xs text-red-500">{{ copyError }}</span>
@@ -80,15 +102,56 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-else class="flex flex-1 min-h-0 p-3">
-      <div class="border-2 border-gray-300 dark:border-gray-600 rounded-md h-full w-full overflow-hidden bg-white dark:bg-gray-900">
+    <div v-else class="reading-page flex flex-1 min-h-0 overflow-y-auto bg-stone-50 dark:bg-stone-950">
+      <article v-if="hasContent" class="reading-article">
         <MarkdownRender
-          v-if="hasContent"
-          class="p-6 scroll-smooth h-full w-full overflow-y-auto"
+          class="reading-content text-stone-900 dark:text-stone-200"
           :content="content"
           final
         />
-      </div>
+      </article>
     </div>
   </div>
 </template>
+
+<style scoped>
+.reading-article {
+  box-sizing: content-box;
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+@media (min-width: 640px) {
+  .reading-article {
+    padding: 3.5rem 2rem 5rem;
+  }
+}
+
+.reading-content {
+  --ms-text-body: 1.125rem;
+  --ms-leading-body: 1.85;
+  --ms-text-h1: 2rem;
+  --ms-text-h2: 1.5rem;
+  --ms-text-h3: 1.25rem;
+  --ms-leading-h1: 1.3;
+  --ms-leading-h2: 1.4;
+  --ms-flow-paragraph-y: 1.1em;
+  --ms-flow-heading-2-mt: 2.25em;
+  --ms-flow-heading-3-mt: 1.75em;
+  --ms-flow-hr-y: 2.75em;
+}
+</style>
+
+<style>
+html.reading-mode,
+html.reading-mode body {
+  background-color: #fafaf9;
+}
+
+html.dark.reading-mode,
+html.dark.reading-mode body {
+  background-color: #0c0a09;
+}
+</style>
