@@ -1,6 +1,8 @@
 {
+  "name": "one-page",
   "type": "module",
   "private": true,
+  "description": "A one-page markdown editor with live preview",
   "packageManager": "pnpm@11.22.0",
   "scripts": {
     "build": "nuxt build",
@@ -21,7 +23,6 @@
     "@nuxt/devtools": "catalog:build",
     "@nuxt/eslint": "catalog:build",
     "@nuxtjs/color-mode": "catalog:build",
-    "@pinia/nuxt": "catalog:build",
     "@types/node": "catalog:dev",
     "@unocss/eslint-config": "catalog:build",
     "@unocss/nuxt": "catalog:build",
@@ -31,10 +32,12 @@
     "eslint": "catalog:dev",
     "eslint-plugin-format": "catalog:dev",
     "nuxt": "catalog:build",
-    "pinia": "catalog:frontend",
     "typescript": "catalog:dev",
     "unocss": "catalog:build",
     "vue": "catalog:frontend",
     "vue-tsc": "catalog:dev"
+  },
+  "dependencies": {
+    "markstream-vue": "catalog:frontend"
   }
 }
