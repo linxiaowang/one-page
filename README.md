@@ -8,7 +8,6 @@
 - [Nuxt 4](https://nuxt.com/) — SSR、文件路由、组件自动导入
 - [UnoCSS](https://github.com/unocss/unocss) 原子化 CSS
 - 深色模式（[ColorMode](https://github.com/nuxt-modules/color-mode)）
-- [PWA](https://github.com/vite-pwa/nuxt) 离线支持
 
 ## 开发
 
@@ -29,7 +28,7 @@ pnpm preview
 - Nuxt 4 + Vue 3 + TypeScript
 - UnoCSS
 - markstream-vue
-- VueUse / VitePWA
+- VueUse
 
 ## License
 

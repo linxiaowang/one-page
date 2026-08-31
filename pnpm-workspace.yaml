@@ -15,7 +15,6 @@ overrides:
   semver: 'catalog:build'
   unplugin: 'catalog:build'
   vite: 'catalog:build'
-  workbox-build: 7.4.0
 catalogs:
   build:
     '@nuxt/devtools': ^3.4.1
@@ -24,7 +23,6 @@ catalogs:
     '@nuxtjs/color-mode': ^4.0.1
     '@unocss/eslint-config': ^66.8.1
     '@unocss/nuxt': ^66.8.1
-    '@vite-pwa/nuxt': ^1.1.1
     '@vueuse/nuxt': ^14.4.0
     chokidar: ^5.0.0
     nuxt: ^4.5.2
