@@ -6,5 +6,6 @@ dist
 .nuxt
 .env
 .idea/
+.data
 public/assets/fonts
 .vercel

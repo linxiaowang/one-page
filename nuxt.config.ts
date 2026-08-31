@@ -51,6 +51,12 @@ export default defineNuxtConfig({
         target: 'esnext',
       },
     },
+    storage: {
+      shares: {
+        driver: 'fs',
+        base: './.data/shares',
+      },
+    },
   },
 
   eslint: {

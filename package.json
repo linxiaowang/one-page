@@ -36,6 +36,7 @@
     "vue-tsc": "catalog:dev"
   },
   "dependencies": {
+    "@upstash/redis": "^1.38.3",
     "markstream-vue": "catalog:frontend"
   }
 }
