@@ -3,9 +3,13 @@ export function useShareLink(content: Ref<string>) {
   const copyError = ref('')
   const loading = ref(false)
   const sharing = ref(false)
+  const isSharedView = ref(false)
+  const isEditing = ref(false)
 
   const { copy, isSupported } = useClipboard()
   const route = useRoute()
+
+  const showEditor = computed(() => !isSharedView.value || isEditing.value)
 
   async function loadFromUrl() {
     const id = route.query.s
@@ -14,6 +18,8 @@ export function useShareLink(content: Ref<string>) {
 
     loading.value = true
     copyError.value = ''
+    isSharedView.value = true
+    isEditing.value = false
 
     try {
       const data = await $fetch<{ content: string }>(`/api/share/${id}`)
@@ -24,10 +30,15 @@ export function useShareLink(content: Ref<string>) {
         ? (error as { data?: { statusMessage?: string } }).data?.statusMessage
         : undefined
       copyError.value = message || '分享链接无效或已过期'
+      isSharedView.value = false
     }
     finally {
       loading.value = false
     }
+  }
+
+  function enterEdit() {
+    isEditing.value = true
   }
 
   async function copyShareLink() {
@@ -51,7 +62,6 @@ export function useShareLink(content: Ref<string>) {
 
       const url = `${window.location.origin}${window.location.pathname}?s=${id}`
       await copy(url)
-      history.replaceState(null, '', `?s=${id}`)
       copied.value = true
       window.setTimeout(() => {
         copied.value = false
@@ -73,7 +83,10 @@ export function useShareLink(content: Ref<string>) {
     copyError,
     loading,
     sharing,
+    isSharedView,
+    showEditor,
     copyShareLink,
+    enterEdit,
     loadFromUrl,
   }
 }

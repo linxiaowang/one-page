@@ -9,7 +9,17 @@ definePageMeta({
 const content = ref('')
 const hasContent = computed(() => content.value.trim().length > 0)
 
-const { copied, copyError, loading, sharing, copyShareLink, loadFromUrl } = useShareLink(content)
+const {
+  copied,
+  copyError,
+  loading,
+  sharing,
+  isSharedView,
+  showEditor,
+  copyShareLink,
+  enterEdit,
+  loadFromUrl,
+} = useShareLink(content)
 
 onMounted(() => {
   loadFromUrl()
@@ -23,6 +33,15 @@ onMounted(() => {
       <div class="flex items-center gap-2">
         <span v-if="copyError" class="text-xs text-red-500">{{ copyError }}</span>
         <button
+          v-if="isSharedView && !showEditor && hasContent"
+          type="button"
+          class="px-3 py-1.5 text-sm rounded-md border transition-colors border-teal-700 text-teal-700 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
+          @click="enterEdit"
+        >
+          编辑
+        </button>
+        <button
+          v-if="showEditor"
           type="button"
           class="px-3 py-1.5 text-sm rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-teal-700 text-teal-700 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
           :disabled="!hasContent || sharing"
@@ -37,7 +56,7 @@ onMounted(() => {
       加载中…
     </div>
 
-    <div v-else class="flex flex-1 min-h-0 gap-3 p-3">
+    <div v-else-if="showEditor" class="flex flex-1 min-h-0 gap-3 p-3">
       <textarea
         v-model="content"
         class="p-4 border-2 border-gray-300 dark:border-gray-600 rounded-md h-full w-full resize-none bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
@@ -54,6 +73,17 @@ onMounted(() => {
         </div>
         <MarkdownRender
           v-else
+          class="p-6 scroll-smooth h-full w-full overflow-y-auto"
+          :content="content"
+          final
+        />
+      </div>
+    </div>
+
+    <div v-else class="flex flex-1 min-h-0 p-3">
+      <div class="border-2 border-gray-300 dark:border-gray-600 rounded-md h-full w-full overflow-hidden bg-white dark:bg-gray-900">
+        <MarkdownRender
+          v-if="hasContent"
           class="p-6 scroll-smooth h-full w-full overflow-y-auto"
           :content="content"
           final
