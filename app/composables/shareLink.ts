@@ -19,8 +19,11 @@ export function useShareLink(content: Ref<string>) {
       const data = await $fetch<{ content: string }>(`/api/share/${id}`)
       content.value = data.content
     }
-    catch {
-      copyError.value = '分享链接无效或已过期'
+    catch (error: unknown) {
+      const message = error && typeof error === 'object' && 'data' in error
+        ? (error as { data?: { statusMessage?: string } }).data?.statusMessage
+        : undefined
+      copyError.value = message || '分享链接无效或已过期'
     }
     finally {
       loading.value = false
@@ -54,8 +57,11 @@ export function useShareLink(content: Ref<string>) {
         copied.value = false
       }, 2000)
     }
-    catch {
-      copyError.value = '生成分享链接失败，请稍后重试'
+    catch (error: unknown) {
+      const message = error && typeof error === 'object' && 'data' in error
+        ? (error as { data?: { statusMessage?: string } }).data?.statusMessage
+        : undefined
+      copyError.value = message || '生成分享链接失败，请稍后重试'
     }
     finally {
       sharing.value = false

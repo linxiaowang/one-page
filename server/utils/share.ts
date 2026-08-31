@@ -3,14 +3,35 @@ import { Redis } from '@upstash/redis'
 const SHARE_TTL_SECONDS = 60 * 60 * 24 * 90
 const MAX_CONTENT_LENGTH = 500_000
 
+function readEnv(key: string) {
+  return process.env[key]
+}
+
+function getRedisConfig() {
+  const config = useRuntimeConfig()
+
+  const url = config.kvRestApiUrl
+    || readEnv('KV_REST_API_URL')
+    || readEnv('UPSTASH_REDIS_REST_URL')
+
+  const token = config.kvRestApiToken
+    || readEnv('KV_REST_API_TOKEN')
+    || readEnv('UPSTASH_REDIS_REST_TOKEN')
+
+  return { url, token }
+}
+
 function getRedis() {
-  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN
+  const { url, token } = getRedisConfig()
 
   if (!url || !token)
     return null
 
   return new Redis({ url, token })
+}
+
+function isVercel() {
+  return Boolean(process.env.VERCEL)
 }
 
 function createShareId() {
@@ -27,6 +48,13 @@ export function assertShareContent(content: unknown): string {
   return content
 }
 
+function storageUnavailable() {
+  throw createError({
+    statusCode: 503,
+    statusMessage: '分享存储未就绪，请在 Vercel 连接 Upstash Redis 后重新部署',
+  })
+}
+
 export async function saveShare(content: string) {
   const id = createShareId()
   const redis = getRedis()
@@ -35,6 +63,9 @@ export async function saveShare(content: string) {
     await redis.set(`share:${id}`, content, { ex: SHARE_TTL_SECONDS })
     return id
   }
+
+  if (isVercel())
+    storageUnavailable()
 
   const storage = useStorage('shares')
   await storage.setItem(`${id}.json`, { content, createdAt: Date.now() })
@@ -46,6 +77,9 @@ export async function getShare(id: string) {
 
   if (redis)
     return await redis.get<string>(`share:${id}`)
+
+  if (isVercel())
+    storageUnavailable()
 
   const storage = useStorage('shares')
   const data = await storage.getItem<{ content: string }>(`${id}.json`)
