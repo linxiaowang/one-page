@@ -30,7 +30,35 @@ const {
   enterEdit,
 } = useShareLink(content, readingFont)
 
+const { exporting, exportError, exportLongImage } = usePageImageExport()
+const pageContentRef = ref<HTMLElement | null>(null)
+const colorMode = useColorMode()
+
 const isReadingView = computed(() => isSharedView.value && !showEditor.value)
+
+const exportSurfaceStyle = computed(() => {
+  if (isReadingView.value) {
+    return {
+      backgroundColor: colorMode.value === 'dark' ? '#0c0a09' : '#fafaf9',
+      padding: '2.5rem 1.5rem 4rem',
+    }
+  }
+
+  return {
+    backgroundColor: colorMode.value === 'dark' ? '#111827' : '#ffffff',
+    padding: '1.5rem',
+  }
+})
+
+async function downloadPageImage() {
+  copyError.value = ''
+  exportError.value = ''
+  await exportLongImage(
+    pageContentRef.value,
+    resolvePageTitleFromMarkdown(content.value),
+    exportSurfaceStyle.value,
+  )
+}
 
 const pageTitle = computed(() => {
   if (!shareId.value || showEditor.value)
@@ -118,7 +146,7 @@ onUnmounted(() => {
     >
       <span class="app-brand font-brand">{{ appName }}</span>
       <div class="flex items-center gap-2">
-        <span v-if="copyError" class="text-xs text-red-500">{{ copyError }}</span>
+        <span v-if="copyError || exportError" class="text-xs text-red-500">{{ copyError || exportError }}</span>
         <button
           v-if="isSharedView && !showEditor && hasContent"
           type="button"
@@ -144,6 +172,15 @@ onUnmounted(() => {
           @click="readingFont = 'heiti'"
         >
           黑体
+        </button>
+        <button
+          v-if="showEditor && hasContent"
+          type="button"
+          class="px-3 py-1.5 text-sm rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-teal-700 text-teal-700 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
+          :disabled="exporting || sharing"
+          @click="downloadPageImage"
+        >
+          {{ exporting ? '导出中…' : '导出长图' }}
         </button>
         <button
           v-if="showEditor"
@@ -176,13 +213,21 @@ onUnmounted(() => {
             这是一页。把内容贴在左边，右边会出预览。
           </p>
         </div>
-        <MarkdownRender
+        <div
           v-else
-          class="p-6 scroll-smooth h-full w-full overflow-y-auto content-font"
-          :class="contentFontClass"
-          :content="content"
-          final
-        />
+          class="p-6 scroll-smooth h-full w-full overflow-y-auto"
+        >
+          <div
+            ref="pageContentRef"
+            class="reading-content text-stone-900 dark:text-stone-200 content-font"
+            :class="contentFontClass"
+          >
+            <MarkdownRender
+              :content="content"
+              final
+            />
+          </div>
+        </div>
       </div>
     </div>
 
@@ -197,7 +242,16 @@ onUnmounted(() => {
         :class="{ 'reading-chrome--visible': showReadingChrome }"
       >
         <div class="flex items-center gap-2 ml-auto">
-          <span v-if="copyError" class="text-xs text-red-500">{{ copyError }}</span>
+          <span v-if="copyError || exportError" class="text-xs text-red-500">{{ copyError || exportError }}</span>
+          <button
+            v-if="hasContent"
+            type="button"
+            class="reading-chrome__action"
+            :disabled="exporting"
+            @click="downloadPageImage"
+          >
+            {{ exporting ? '导出中…' : '导出长图' }}
+          </button>
           <button
             v-if="hasContent"
             type="button"
@@ -210,12 +264,16 @@ onUnmounted(() => {
       </div>
 
       <article v-if="hasContent" class="reading-article">
-        <MarkdownRender
+        <div
+          ref="pageContentRef"
           class="reading-content text-stone-900 dark:text-stone-200 content-font"
           :class="contentFontClass"
-          :content="content"
-          final
-        />
+        >
+          <MarkdownRender
+            :content="content"
+            final
+          />
+        </div>
       </article>
     </div>
   </div>
