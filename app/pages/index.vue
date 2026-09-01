@@ -181,19 +181,19 @@ onUnmounted(() => {
       加载中…
     </div>
 
-    <div v-else-if="showEditor" class="flex flex-1 min-h-0 gap-3 p-3">
+    <div v-else-if="showEditor" class="editor-layout flex flex-1 min-h-0 flex-col sm:flex-row gap-3 p-3">
       <textarea
         v-model="content"
-        class="p-4 border-2 border-gray-300 dark:border-gray-600 rounded-md h-full w-full resize-none bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+        class="editor-input p-4 border-2 border-gray-300 dark:border-gray-600 rounded-md min-h-0 flex-1 w-full resize-none bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 sm:h-full"
         placeholder="在这里粘贴或输入 Markdown…"
       />
-      <div class="relative border-2 border-gray-300 dark:border-gray-600 rounded-md h-full w-full overflow-hidden bg-white dark:bg-gray-900">
+      <div class="editor-preview relative border-2 border-gray-300 dark:border-gray-600 rounded-md min-h-0 flex-1 w-full overflow-hidden bg-white dark:bg-gray-900 sm:h-full">
         <div
           v-if="!hasContent"
           class="absolute inset-0 flex items-center justify-center p-8 text-center text-gray-400 dark:text-gray-500"
         >
           <p class="max-w-xs text-base leading-relaxed">
-            这是一页。把内容贴在左边，右边会出预览。
+            这是一页。输入内容后，下面会出预览。
           </p>
         </div>
         <div
@@ -396,6 +396,26 @@ html.dark .reading-chrome__action:hover {
 
 .content-font--songti {
   --ms-font-sans: 'Songti SC', 'STSong', 'SimSun', serif;
+}
+
+.editor-layout {
+  overflow: hidden;
+}
+
+@media (max-width: 639px) {
+  .editor-layout {
+    overflow-y: auto;
+  }
+
+  .editor-input {
+    min-height: 42vh;
+    flex: 0 0 auto;
+  }
+
+  .editor-preview {
+    min-height: 42vh;
+    flex: 0 0 auto;
+  }
 }
 
 .page-export-source {
