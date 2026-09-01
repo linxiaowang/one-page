@@ -133,11 +133,11 @@ onUnmounted(() => {
   >
     <header
       v-if="!isReadingView"
-      class="flex items-center justify-between gap-3 px-3 py-2 border-b border-gray-200 dark:border-gray-700"
+      class="editor-header flex flex-col gap-2 px-3 py-2 border-b border-gray-200 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
     >
-      <span class="app-brand font-brand">{{ appName }}</span>
-      <div class="flex items-center gap-2">
-        <span v-if="copyError || exportError" class="text-xs text-red-500">{{ copyError || exportError }}</span>
+      <span class="app-brand font-brand shrink-0">{{ appName }}</span>
+      <div class="editor-header__actions flex flex-wrap items-center gap-x-2 gap-y-1 sm:justify-end">
+        <span v-if="copyError || exportError" class="editor-header__error w-full text-xs text-red-500 sm:w-auto">{{ copyError || exportError }}</span>
         <button
           v-if="showEditor"
           type="button"
@@ -159,20 +159,22 @@ onUnmounted(() => {
         <button
           v-if="showEditor && hasContent"
           type="button"
-          class="px-3 py-1.5 text-sm rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-teal-700 text-teal-700 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
+          class="editor-header__action px-3 py-1.5 text-sm rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-teal-700 text-teal-700 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
           :disabled="exporting || sharing"
           @click="downloadPageImage"
         >
-          {{ exporting ? '导出中…' : '导出长图' }}
+          <span class="sm:hidden">{{ exporting ? '导出中' : '导出' }}</span>
+          <span class="hidden sm:inline">{{ exporting ? '导出中…' : '导出长图' }}</span>
         </button>
         <button
           v-if="showEditor"
           type="button"
-          class="px-3 py-1.5 text-sm rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-teal-700 text-teal-700 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
+          class="editor-header__action px-3 py-1.5 text-sm rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-teal-700 text-teal-700 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
           :disabled="!hasContent || sharing"
           @click="copyShareLink"
         >
-          {{ copied ? '已复制' : sharing ? '生成中…' : '复制分享链接' }}
+          <span class="sm:hidden">{{ copied ? '已复制' : sharing ? '生成中' : '复制' }}</span>
+          <span class="hidden sm:inline">{{ copied ? '已复制' : sharing ? '生成中…' : '复制分享链接' }}</span>
         </button>
       </div>
     </header>
@@ -307,6 +309,27 @@ html.dark .font-toggle {
 
 html.dark .font-toggle--active {
   color: rgb(94 234 212);
+}
+
+@media (max-width: 639px) {
+  .editor-header {
+    flex-shrink: 0;
+    padding-block: 0.5rem;
+  }
+
+  .editor-header__actions {
+    justify-content: flex-start;
+  }
+
+  .editor-header__action {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+  }
+
+  .font-toggle {
+    font-size: 0.8125rem;
+  }
 }
 
 .reading-chrome {
