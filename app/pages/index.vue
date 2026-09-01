@@ -139,14 +139,6 @@ onUnmounted(() => {
       <div class="flex items-center gap-2">
         <span v-if="copyError || exportError" class="text-xs text-red-500">{{ copyError || exportError }}</span>
         <button
-          v-if="isSharedView && !showEditor && hasContent"
-          type="button"
-          class="px-3 py-1.5 text-sm rounded-md border transition-colors border-teal-700 text-teal-700 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
-          @click="enterEdit"
-        >
-          编辑
-        </button>
-        <button
           v-if="showEditor"
           type="button"
           class="font-toggle font-toggle--songti"
@@ -231,26 +223,14 @@ onUnmounted(() => {
         class="reading-chrome"
         :class="{ 'reading-chrome--visible': showReadingChrome }"
       >
-        <div class="flex items-center gap-2 ml-auto">
-          <span v-if="copyError || exportError" class="text-xs text-red-500">{{ copyError || exportError }}</span>
-          <button
-            v-if="hasContent"
-            type="button"
-            class="reading-chrome__action"
-            :disabled="exporting"
-            @click="downloadPageImage"
-          >
-            {{ exporting ? '导出中…' : '导出长图' }}
-          </button>
-          <button
-            v-if="hasContent"
-            type="button"
-            class="reading-chrome__action"
-            @click="enterEdit"
-          >
-            编辑
-          </button>
-        </div>
+        <button
+          v-if="hasContent"
+          type="button"
+          class="reading-chrome__action"
+          @click="enterEdit"
+        >
+          编辑
+        </button>
       </div>
 
       <article v-if="hasContent" class="reading-article">
@@ -352,44 +332,30 @@ html.dark .font-toggle--active {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
   pointer-events: auto;
-  background: linear-gradient(
-    to bottom,
-    rgb(250 250 249 / 0.94) 0%,
-    rgb(250 250 249 / 0.72) 55%,
-    rgb(250 250 249 / 0) 100%
-  );
-}
-
-html.dark .reading-chrome--visible {
-  background: linear-gradient(
-    to bottom,
-    rgb(12 10 9 / 0.94) 0%,
-    rgb(12 10 9 / 0.72) 55%,
-    rgb(12 10 9 / 0) 100%
-  );
 }
 
 .reading-chrome__action {
   border: 0;
   background: transparent;
+  margin-left: auto;
   padding: 0.125rem 0.25rem;
   font-size: 0.75rem;
   line-height: 1.25rem;
-  color: rgb(120 113 108 / 0.8);
+  color: rgb(120 113 108 / 0.45);
   cursor: pointer;
   transition: color 0.15s ease;
 }
 
 .reading-chrome__action:hover {
-  color: rgb(41 37 36);
+  color: rgb(120 113 108 / 0.72);
 }
 
 html.dark .reading-chrome__action {
-  color: rgb(168 162 158 / 0.75);
+  color: rgb(168 162 158 / 0.42);
 }
 
 html.dark .reading-chrome__action:hover {
-  color: rgb(231 229 228);
+  color: rgb(168 162 158 / 0.68);
 }
 
 .reading-article {
