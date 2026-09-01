@@ -136,46 +136,52 @@ onUnmounted(() => {
       class="editor-header flex flex-col gap-2 px-3 py-2 border-b border-gray-200 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
     >
       <span class="app-brand font-brand shrink-0">{{ appName }}</span>
-      <div class="editor-header__actions flex flex-wrap items-center gap-x-2 gap-y-1 sm:justify-end">
+      <div class="editor-header__actions flex w-full flex-col gap-1 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-2">
         <span v-if="copyError || exportError" class="editor-header__error w-full text-xs text-red-500 sm:w-auto">{{ copyError || exportError }}</span>
-        <button
-          v-if="showEditor"
-          type="button"
-          class="font-toggle font-toggle--songti"
-          :class="{ 'font-toggle--active': readingFont === 'songti' }"
-          @click="readingFont = 'songti'"
-        >
-          宋体
-        </button>
-        <button
-          v-if="showEditor"
-          type="button"
-          class="font-toggle font-toggle--heiti"
-          :class="{ 'font-toggle--active': readingFont === 'heiti' }"
-          @click="readingFont = 'heiti'"
-        >
-          黑体
-        </button>
-        <button
-          v-if="showEditor && hasContent"
-          type="button"
-          class="editor-header__action px-3 py-1.5 text-sm rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-teal-700 text-teal-700 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
-          :disabled="exporting || sharing"
-          @click="downloadPageImage"
-        >
-          <span class="sm:hidden">{{ exporting ? '导出中' : '导出' }}</span>
-          <span class="hidden sm:inline">{{ exporting ? '导出中…' : '导出长图' }}</span>
-        </button>
-        <button
-          v-if="showEditor"
-          type="button"
-          class="editor-header__action px-3 py-1.5 text-sm rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-teal-700 text-teal-700 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
-          :disabled="!hasContent || sharing"
-          @click="copyShareLink"
-        >
-          <span class="sm:hidden">{{ copied ? '已复制' : sharing ? '生成中' : '复制' }}</span>
-          <span class="hidden sm:inline">{{ copied ? '已复制' : sharing ? '生成中…' : '复制分享链接' }}</span>
-        </button>
+        <div class="editor-header__toolbar flex w-full items-center justify-between gap-x-2 sm:w-auto sm:justify-end sm:gap-2">
+          <div class="editor-header__fonts flex items-center gap-x-2 sm:contents">
+            <button
+              v-if="showEditor"
+              type="button"
+              class="font-toggle font-toggle--songti"
+              :class="{ 'font-toggle--active': readingFont === 'songti' }"
+              @click="readingFont = 'songti'"
+            >
+              宋体
+            </button>
+            <button
+              v-if="showEditor"
+              type="button"
+              class="font-toggle font-toggle--heiti"
+              :class="{ 'font-toggle--active': readingFont === 'heiti' }"
+              @click="readingFont = 'heiti'"
+            >
+              黑体
+            </button>
+          </div>
+          <div class="editor-header__tools flex shrink-0 items-center gap-x-2 sm:contents">
+            <button
+              v-if="showEditor && hasContent"
+              type="button"
+              class="editor-header__action px-3 py-1.5 text-sm rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-teal-700 text-teal-700 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
+              :disabled="exporting || sharing"
+              @click="downloadPageImage"
+            >
+              <span class="sm:hidden">{{ exporting ? '导出中' : '导出' }}</span>
+              <span class="hidden sm:inline">{{ exporting ? '导出中…' : '导出长图' }}</span>
+            </button>
+            <button
+              v-if="showEditor"
+              type="button"
+              class="editor-header__action px-3 py-1.5 text-sm rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-teal-700 text-teal-700 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
+              :disabled="!hasContent || sharing"
+              @click="copyShareLink"
+            >
+              <span class="sm:hidden">{{ copied ? '已复制' : sharing ? '生成中' : '复制' }}</span>
+              <span class="hidden sm:inline">{{ copied ? '已复制' : sharing ? '生成中…' : '复制分享链接' }}</span>
+            </button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -315,10 +321,6 @@ html.dark .font-toggle--active {
   .editor-header {
     flex-shrink: 0;
     padding-block: 0.5rem;
-  }
-
-  .editor-header__actions {
-    justify-content: flex-start;
   }
 
   .editor-header__action {
