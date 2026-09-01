@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@upstash/redis": "^1.38.3",
-    "html-to-image": "^1.11.13",
-    "markstream-vue": "catalog:frontend"
+    "markstream-vue": "catalog:frontend",
+    "modern-screenshot": "^4.7.0"
   }
 }

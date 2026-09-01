@@ -2,7 +2,7 @@
 import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
 import type { ReadingFont } from '~/constants/reading'
-import { DEFAULT_READING_FONT } from '~/constants/reading'
+import { DEFAULT_READING_FONT, READING_EXPORT_SURFACE_WIDTH } from '~/constants/reading'
 import { appName } from '~/constants'
 import { resolvePageTitleFromMarkdown } from '~/utils/markdownTitle'
 
@@ -31,32 +31,22 @@ const {
 } = useShareLink(content, readingFont)
 
 const { exporting, exportError, exportLongImage } = usePageImageExport()
-const pageContentRef = ref<HTMLElement | null>(null)
-const colorMode = useColorMode()
+const exportSourceRef = ref<HTMLElement | null>(null)
 
 const isReadingView = computed(() => isSharedView.value && !showEditor.value)
-
-const exportSurfaceStyle = computed(() => {
-  if (isReadingView.value) {
-    return {
-      backgroundColor: colorMode.value === 'dark' ? '#0c0a09' : '#fafaf9',
-      padding: '2.5rem 1.5rem 4rem',
-    }
-  }
-
-  return {
-    backgroundColor: colorMode.value === 'dark' ? '#111827' : '#ffffff',
-    padding: '1.5rem',
-  }
-})
 
 async function downloadPageImage() {
   copyError.value = ''
   exportError.value = ''
+  await nextTick()
+  await nextTick()
+
+  if (!exportSourceRef.value)
+    return
+
   await exportLongImage(
-    pageContentRef.value,
+    exportSourceRef.value,
     resolvePageTitleFromMarkdown(content.value),
-    exportSurfaceStyle.value,
   )
 }
 
@@ -218,7 +208,6 @@ onUnmounted(() => {
           class="p-6 scroll-smooth h-full w-full overflow-y-auto"
         >
           <div
-            ref="pageContentRef"
             class="reading-content text-stone-900 dark:text-stone-200 content-font"
             :class="contentFontClass"
           >
@@ -265,8 +254,25 @@ onUnmounted(() => {
 
       <article v-if="hasContent" class="reading-article">
         <div
-          ref="pageContentRef"
           class="reading-content text-stone-900 dark:text-stone-200 content-font"
+          :class="contentFontClass"
+        >
+          <MarkdownRender
+            :content="content"
+            final
+          />
+        </div>
+      </article>
+    </div>
+
+    <div
+      v-if="hasContent"
+      class="page-export-source"
+      aria-hidden="true"
+    >
+      <article ref="exportSourceRef" class="reading-article reading-article--export">
+        <div
+          class="reading-content text-stone-900 content-font"
           :class="contentFontClass"
         >
           <MarkdownRender
@@ -423,6 +429,31 @@ html.dark .reading-chrome__action:hover {
 
 .content-font--songti {
   --ms-font-sans: 'Songti SC', 'STSong', 'SimSun', serif;
+}
+
+.page-export-source {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: v-bind(READING_EXPORT_SURFACE_WIDTH);
+  opacity: 0;
+  pointer-events: none;
+  background-color: #fafaf9;
+  overflow: visible;
+}
+
+.reading-article--export {
+  width: 100%;
+  max-width: 42rem;
+  margin: 0;
+}
+
+/* 正文用浅色字，表头仍跟 markstream 主题走 */
+.page-export-source :deep(.table-node thead th),
+.page-export-source :deep(.table-node thead th .text-node),
+.page-export-source :deep(.table-node thead th span) {
+  color: hsl(var(--ms-foreground));
 }
 </style>
 
