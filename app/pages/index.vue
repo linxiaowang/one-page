@@ -4,6 +4,7 @@ import 'markstream-vue/index.css'
 import type { ReadingFont } from '~/constants/reading'
 import { DEFAULT_READING_FONT } from '~/constants/reading'
 import { appName } from '~/constants'
+import { extractFirstHeading } from '~/utils/markdownTitle'
 
 definePageMeta({
   layout: 'home',
@@ -29,6 +30,17 @@ const {
 } = useShareLink(content, readingFont)
 
 const isReadingView = computed(() => isSharedView.value && !showEditor.value)
+
+const pageTitle = computed(() => {
+  if (!isReadingView.value)
+    return appName
+
+  return extractFirstHeading(content.value) || appName
+})
+
+useHead({
+  title: pageTitle,
+})
 
 const readingPageRef = ref<HTMLElement | null>(null)
 const showReadingChrome = ref(true)

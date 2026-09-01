@@ -2,7 +2,7 @@
 import { appName } from '~/constants'
 
 useHead({
-  title: appName,
+  titleTemplate: title => title || appName,
 })
 </script>
 
