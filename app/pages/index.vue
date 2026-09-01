@@ -23,14 +23,60 @@ const {
 
 const isReadingView = computed(() => isSharedView.value && !showEditor.value)
 
+const readingPageRef = ref<HTMLElement | null>(null)
+const showReadingChrome = ref(true)
+const { y, directions } = useScroll(readingPageRef)
+let readingChromeTimer: ReturnType<typeof setTimeout> | undefined
+
+function scheduleReadingChromeHide() {
+  clearTimeout(readingChromeTimer)
+  readingChromeTimer = setTimeout(() => {
+    if (isReadingView.value && y.value < 32)
+      showReadingChrome.value = false
+  }, 2400)
+}
+
 watch(isReadingView, (reading) => {
+  if (reading) {
+    showReadingChrome.value = true
+    scheduleReadingChromeHide()
+  }
+  else {
+    clearTimeout(readingChromeTimer)
+  }
+
   if (!import.meta.client)
     return
   document.documentElement.classList.toggle('reading-mode', reading)
   document.body.classList.toggle('reading-mode', reading)
 }, { immediate: true })
 
+watch([y, () => directions.top, () => directions.bottom], () => {
+  if (!isReadingView.value)
+    return
+
+  if (y.value < 32) {
+    showReadingChrome.value = true
+    scheduleReadingChromeHide()
+    return
+  }
+
+  if (directions.bottom)
+    showReadingChrome.value = false
+  else if (directions.top)
+    showReadingChrome.value = true
+})
+
+function revealReadingChrome(event: MouseEvent) {
+  if (!isReadingView.value)
+    return
+
+  if (event.clientY <= 56)
+    showReadingChrome.value = true
+}
+
 onUnmounted(() => {
+  clearTimeout(readingChromeTimer)
   if (!import.meta.client)
     return
   document.documentElement.classList.remove('reading-mode')
@@ -48,8 +94,8 @@ onMounted(() => {
     :class="isReadingView ? 'bg-stone-50 dark:bg-stone-950' : ''"
   >
     <header
+      v-if="!isReadingView"
       class="flex items-center justify-between gap-3 px-3 py-2 border-b border-gray-200 dark:border-gray-700"
-      :class="isReadingView ? 'border-b-transparent bg-transparent' : ''"
     >
       <span class="text-sm font-medium text-teal-800 dark:text-teal-300">one-page</span>
       <div class="flex items-center gap-2">
@@ -102,7 +148,29 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-else class="reading-page flex flex-1 min-h-0 overflow-y-auto bg-stone-50 dark:bg-stone-950">
+    <div
+      v-else
+      ref="readingPageRef"
+      class="reading-page flex flex-1 min-h-0 overflow-y-auto bg-stone-50 dark:bg-stone-950"
+      @pointermove="revealReadingChrome"
+    >
+      <div
+        class="reading-chrome"
+        :class="{ 'reading-chrome--visible': showReadingChrome }"
+      >
+        <div class="flex items-center gap-2 ml-auto">
+          <span v-if="copyError" class="text-xs text-red-500">{{ copyError }}</span>
+          <button
+            v-if="hasContent"
+            type="button"
+            class="reading-chrome__action"
+            @click="enterEdit"
+          >
+            编辑
+          </button>
+        </div>
+      </div>
+
       <article v-if="hasContent" class="reading-article">
         <MarkdownRender
           class="reading-content text-stone-900 dark:text-stone-200"
@@ -115,6 +183,69 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.reading-chrome {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: 42rem;
+  padding: 0.875rem 1.5rem;
+  transform: translateX(-50%) translateY(calc(-100% - 0.5rem));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.28s ease,
+    opacity 0.28s ease;
+}
+
+.reading-chrome--visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+  background: linear-gradient(
+    to bottom,
+    rgb(250 250 249 / 0.94) 0%,
+    rgb(250 250 249 / 0.72) 55%,
+    rgb(250 250 249 / 0) 100%
+  );
+}
+
+html.dark .reading-chrome--visible {
+  background: linear-gradient(
+    to bottom,
+    rgb(12 10 9 / 0.94) 0%,
+    rgb(12 10 9 / 0.72) 55%,
+    rgb(12 10 9 / 0) 100%
+  );
+}
+
+.reading-chrome__action {
+  border: 0;
+  background: transparent;
+  padding: 0.125rem 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  color: rgb(120 113 108 / 0.8);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.reading-chrome__action:hover {
+  color: rgb(41 37 36);
+}
+
+html.dark .reading-chrome__action {
+  color: rgb(168 162 158 / 0.75);
+}
+
+html.dark .reading-chrome__action:hover {
+  color: rgb(231 229 228);
+}
+
 .reading-article {
   box-sizing: content-box;
   width: 100%;
@@ -126,6 +257,10 @@ onMounted(() => {
 @media (min-width: 640px) {
   .reading-article {
     padding: 3.5rem 2rem 5rem;
+  }
+
+  .reading-chrome {
+    padding-inline: 2rem;
   }
 }
 
