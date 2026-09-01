@@ -1,7 +1,13 @@
 import { Redis } from '@upstash/redis'
+import { DEFAULT_READING_FONT, normalizeReadingFont, type ReadingFont } from '../../app/constants/reading'
 
 const SHARE_TTL_SECONDS = 60 * 60 * 24 * 90
 const MAX_CONTENT_LENGTH = 500_000
+
+export interface SharePayload {
+  content: string
+  font: ReadingFont
+}
 
 function readEnv(key: string) {
   return process.env[key]
@@ -48,6 +54,51 @@ export function assertShareContent(content: unknown): string {
   return content
 }
 
+export function assertShareFont(font: unknown): ReadingFont {
+  return normalizeReadingFont(font)
+}
+
+function normalizeSharePayload(raw: unknown): SharePayload | null {
+  if (raw == null)
+    return null
+
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw) as { content?: unknown, font?: unknown }
+      if (typeof parsed.content === 'string') {
+        return {
+          content: parsed.content,
+          font: assertShareFont(parsed.font),
+        }
+      }
+    }
+    catch {
+      // Legacy plain-text shares.
+    }
+
+    if (!raw.trim())
+      return null
+
+    return {
+      content: raw,
+      font: DEFAULT_READING_FONT,
+    }
+  }
+
+  if (typeof raw === 'object' && raw !== null && 'content' in raw) {
+    const data = raw as { content?: unknown, font?: unknown }
+    if (typeof data.content !== 'string' || !data.content.trim())
+      return null
+
+    return {
+      content: data.content,
+      font: assertShareFont(data.font),
+    }
+  }
+
+  return null
+}
+
 function storageUnavailable() {
   throw createError({
     statusCode: 503,
@@ -55,12 +106,13 @@ function storageUnavailable() {
   })
 }
 
-export async function saveShare(content: string) {
+export async function saveShare(content: string, font: ReadingFont = DEFAULT_READING_FONT) {
   const id = createShareId()
+  const payload: SharePayload = { content, font }
   const redis = getRedis()
 
   if (redis) {
-    await redis.set(`share:${id}`, content, { ex: SHARE_TTL_SECONDS })
+    await redis.set(`share:${id}`, JSON.stringify(payload), { ex: SHARE_TTL_SECONDS })
     return id
   }
 
@@ -68,20 +120,22 @@ export async function saveShare(content: string) {
     storageUnavailable()
 
   const storage = useStorage('shares')
-  await storage.setItem(`${id}.json`, { content, createdAt: Date.now() })
+  await storage.setItem(`${id}.json`, { ...payload, createdAt: Date.now() })
   return id
 }
 
 export async function getShare(id: string) {
   const redis = getRedis()
 
-  if (redis)
-    return await redis.get<string>(`share:${id}`)
+  if (redis) {
+    const raw = await redis.get(`share:${id}`)
+    return normalizeSharePayload(raw)
+  }
 
   if (isVercel())
     storageUnavailable()
 
   const storage = useStorage('shares')
-  const data = await storage.getItem<{ content: string }>(`${id}.json`)
-  return data?.content ?? null
+  const data = await storage.getItem<SharePayload & { createdAt?: number }>(`${id}.json`)
+  return normalizeSharePayload(data)
 }

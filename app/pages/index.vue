@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
+import type { ReadingFont } from '~/constants/reading'
+import { DEFAULT_READING_FONT } from '~/constants/reading'
 
 definePageMeta({
   layout: 'home',
 })
 
 const content = ref('')
+const readingFont = ref<ReadingFont>(DEFAULT_READING_FONT)
 const hasContent = computed(() => content.value.trim().length > 0)
+const contentFontClass = computed(() =>
+  readingFont.value === 'songti' ? 'content-font--songti' : 'content-font--heiti',
+)
 
 const {
   copied,
@@ -19,7 +25,7 @@ const {
   copyShareLink,
   enterEdit,
   loadFromUrl,
-} = useShareLink(content)
+} = useShareLink(content, readingFont)
 
 const isReadingView = computed(() => isSharedView.value && !showEditor.value)
 
@@ -111,6 +117,24 @@ onMounted(() => {
         <button
           v-if="showEditor"
           type="button"
+          class="font-toggle font-toggle--songti"
+          :class="{ 'font-toggle--active': readingFont === 'songti' }"
+          @click="readingFont = 'songti'"
+        >
+          宋体
+        </button>
+        <button
+          v-if="showEditor"
+          type="button"
+          class="font-toggle font-toggle--heiti"
+          :class="{ 'font-toggle--active': readingFont === 'heiti' }"
+          @click="readingFont = 'heiti'"
+        >
+          黑体
+        </button>
+        <button
+          v-if="showEditor"
+          type="button"
           class="px-3 py-1.5 text-sm rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-teal-700 text-teal-700 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
           :disabled="!hasContent || sharing"
           @click="copyShareLink"
@@ -141,7 +165,8 @@ onMounted(() => {
         </div>
         <MarkdownRender
           v-else
-          class="p-6 scroll-smooth h-full w-full overflow-y-auto"
+          class="p-6 scroll-smooth h-full w-full overflow-y-auto content-font"
+          :class="contentFontClass"
           :content="content"
           final
         />
@@ -173,7 +198,8 @@ onMounted(() => {
 
       <article v-if="hasContent" class="reading-article">
         <MarkdownRender
-          class="reading-content text-stone-900 dark:text-stone-200"
+          class="reading-content text-stone-900 dark:text-stone-200 content-font"
+          :class="contentFontClass"
           :content="content"
           final
         />
@@ -183,6 +209,37 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.font-toggle {
+  border: 0;
+  background: transparent;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: rgb(120 113 108 / 0.75);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.font-toggle--active {
+  color: rgb(15 118 110);
+}
+
+.font-toggle--songti {
+  font-family: 'Songti SC', 'STSong', 'SimSun', serif;
+}
+
+.font-toggle--heiti {
+  font-family: 'PingFang SC', 'Heiti SC', 'Microsoft YaHei', sans-serif;
+}
+
+html.dark .font-toggle {
+  color: rgb(168 162 158 / 0.7);
+}
+
+html.dark .font-toggle--active {
+  color: rgb(94 234 212);
+}
+
 .reading-chrome {
   position: fixed;
   top: 0;
@@ -276,6 +333,14 @@ html.dark .reading-chrome__action:hover {
   --ms-flow-heading-2-mt: 2.25em;
   --ms-flow-heading-3-mt: 1.75em;
   --ms-flow-hr-y: 2.75em;
+}
+
+.content-font--heiti {
+  --ms-font-sans: 'PingFang SC', 'Heiti SC', 'Microsoft YaHei', sans-serif;
+}
+
+.content-font--songti {
+  --ms-font-sans: 'Songti SC', 'STSong', 'SimSun', serif;
 }
 </style>
 

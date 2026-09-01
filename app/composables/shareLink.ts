@@ -1,4 +1,7 @@
-export function useShareLink(content: Ref<string>) {
+import type { ReadingFont } from '~/constants/reading'
+import { DEFAULT_READING_FONT } from '~/constants/reading'
+
+export function useShareLink(content: Ref<string>, font: Ref<ReadingFont>) {
   const copied = ref(false)
   const copyError = ref('')
   const loading = ref(false)
@@ -22,8 +25,9 @@ export function useShareLink(content: Ref<string>) {
     isEditing.value = false
 
     try {
-      const data = await $fetch<{ content: string }>(`/api/share/${id}`)
+      const data = await $fetch<{ content: string, font?: ReadingFont }>(`/api/share/${id}`)
       content.value = data.content
+      font.value = data.font ?? DEFAULT_READING_FONT
     }
     catch (error: unknown) {
       const message = error && typeof error === 'object' && 'data' in error
@@ -57,7 +61,10 @@ export function useShareLink(content: Ref<string>) {
     try {
       const { id } = await $fetch<{ id: string }>('/api/share', {
         method: 'POST',
-        body: { content: content.value },
+        body: {
+          content: content.value,
+          font: font.value,
+        },
       })
 
       const url = `${window.location.origin}${window.location.pathname}?s=${id}`

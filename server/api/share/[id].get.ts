@@ -6,10 +6,10 @@ export default defineEventHandler(async (event) => {
   if (!id || !/^[a-z0-9]{12}$/i.test(id))
     throw createError({ statusCode: 400, statusMessage: 'Invalid share id' })
 
-  const content = await getShare(id)
+  const data = await getShare(id)
 
-  if (!content)
+  if (!data)
     throw createError({ statusCode: 404, statusMessage: 'Share not found' })
 
-  return { content }
+  return data
 })
