@@ -1,45 +1,61 @@
 import type { ReadingFont } from '~/constants/reading'
 import { DEFAULT_READING_FONT } from '~/constants/reading'
 
+function resolveShareId(query: Record<string, unknown>): string | null {
+  const id = query.s
+  if (typeof id !== 'string' || !id)
+    return null
+  return id
+}
+
 export function useShareLink(content: Ref<string>, font: Ref<ReadingFont>) {
   const copied = ref(false)
   const copyError = ref('')
-  const loading = ref(false)
   const sharing = ref(false)
-  const isSharedView = ref(false)
   const isEditing = ref(false)
 
   const { copy, isSupported } = useClipboard()
   const route = useRoute()
+  const requestFetch = useRequestFetch()
+  const shareId = computed(() => resolveShareId(route.query))
 
-  const showEditor = computed(() => !isSharedView.value || isEditing.value)
+  const { data: shareData, pending, error, refresh } = useAsyncData(
+    () => (shareId.value ? `share:${shareId.value}` : 'share:none'),
+    async () => {
+      const id = shareId.value
+      if (!id)
+        return null
 
-  async function loadFromUrl() {
-    const id = route.query.s
-    if (!id || Array.isArray(id))
+      return await requestFetch<{ content: string, font?: ReadingFont }>(`/api/share/${id}`)
+    },
+    { watch: [shareId] },
+  )
+
+  function applyShareData(data: { content: string, font?: ReadingFont } | null | undefined) {
+    if (!data)
       return
 
-    loading.value = true
+    content.value = data.content
+    font.value = data.font ?? DEFAULT_READING_FONT
     copyError.value = ''
-    isSharedView.value = true
-    isEditing.value = false
-
-    try {
-      const data = await $fetch<{ content: string, font?: ReadingFont }>(`/api/share/${id}`)
-      content.value = data.content
-      font.value = data.font ?? DEFAULT_READING_FONT
-    }
-    catch (error: unknown) {
-      const message = error && typeof error === 'object' && 'data' in error
-        ? (error as { data?: { statusMessage?: string } }).data?.statusMessage
-        : undefined
-      copyError.value = message || '分享链接无效或已过期'
-      isSharedView.value = false
-    }
-    finally {
-      loading.value = false
-    }
   }
+
+  applyShareData(shareData.value)
+
+  watch(shareData, (data) => {
+    applyShareData(data)
+  })
+
+  watch(error, (fetchError) => {
+    if (!shareId.value || !fetchError)
+      return
+
+    copyError.value = '分享链接无效或已过期'
+  }, { immediate: true })
+
+  const isSharedView = computed(() => Boolean(shareId.value && !error.value))
+  const loading = computed(() => Boolean(shareId.value && pending.value))
+  const showEditor = computed(() => !isSharedView.value || isEditing.value)
 
   function enterEdit() {
     isEditing.value = true
@@ -91,9 +107,11 @@ export function useShareLink(content: Ref<string>, font: Ref<ReadingFont>) {
     loading,
     sharing,
     isSharedView,
+    shareData,
+    shareId,
     showEditor,
     copyShareLink,
     enterEdit,
-    loadFromUrl,
+    refreshShare: refresh,
   }
 }

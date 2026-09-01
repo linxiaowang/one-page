@@ -4,7 +4,7 @@ import 'markstream-vue/index.css'
 import type { ReadingFont } from '~/constants/reading'
 import { DEFAULT_READING_FONT } from '~/constants/reading'
 import { appName } from '~/constants'
-import { extractFirstHeading } from '~/utils/markdownTitle'
+import { resolvePageTitleFromMarkdown } from '~/utils/markdownTitle'
 
 definePageMeta({
   layout: 'home',
@@ -23,23 +23,27 @@ const {
   loading,
   sharing,
   isSharedView,
+  shareData,
+  shareId,
   showEditor,
   copyShareLink,
   enterEdit,
-  loadFromUrl,
 } = useShareLink(content, readingFont)
 
 const isReadingView = computed(() => isSharedView.value && !showEditor.value)
 
 const pageTitle = computed(() => {
-  if (!isReadingView.value)
+  if (!shareId.value || showEditor.value)
     return appName
 
-  return extractFirstHeading(content.value) || appName
+  const markdown = shareData.value?.content ?? content.value
+  return resolvePageTitleFromMarkdown(markdown)
 })
 
-useHead({
+useSeoMeta({
   title: pageTitle,
+  ogTitle: pageTitle,
+  twitterTitle: pageTitle,
 })
 
 const readingPageRef = ref<HTMLElement | null>(null)
@@ -100,10 +104,6 @@ onUnmounted(() => {
     return
   document.documentElement.classList.remove('reading-mode')
   document.body.classList.remove('reading-mode')
-})
-
-onMounted(() => {
-  loadFromUrl()
 })
 </script>
 

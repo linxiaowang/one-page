@@ -1,3 +1,5 @@
+import { appName } from '~/constants'
+
 function stripInlineMarkdown(text: string) {
   return text
     .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
@@ -33,4 +35,8 @@ export function extractFirstHeading(markdown: string): string | null {
   }
 
   return null
+}
+
+export function resolvePageTitleFromMarkdown(markdown: string): string {
+  return extractFirstHeading(markdown) || appName
 }
