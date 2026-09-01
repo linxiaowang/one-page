@@ -1,0 +1,69 @@
+.page-export-source {
+  color-scheme: light;
+}
+
+/*
+ * 导出层锁死 markstream 浅色 token，避免 html.dark 污染表头、代码块等语义色。
+ * 变量取自 markstream-vue 默认浅色主题。
+ */
+html.dark .page-export-source .markstream-vue,
+.page-export-source .markstream-vue {
+  color-scheme: light;
+  --ms-background: 0 0% 100%;
+  --ms-foreground: 0 0% 10%;
+  --ms-muted: 0 0% 96.5%;
+  --ms-muted-foreground: 0 0% 43%;
+  --ms-secondary: 0 0% 93.5%;
+  --ms-secondary-foreground: 0 0% 10%;
+  --ms-accent: 0 0% 91%;
+  --ms-accent-foreground: 0 0% 10%;
+  --ms-primary: 0 0% 10%;
+  --ms-primary-foreground: 0 0% 100%;
+  --ms-destructive: 0 62% 52%;
+  --ms-destructive-foreground: 0 0% 100%;
+  --ms-border: 0 0% 87%;
+  --ms-ring: 0 0% 10%;
+  --ms-popover: 0 0% 100%;
+  --ms-popover-foreground: 0 0% 10%;
+  --ms-info: 215 60% 50%;
+  --ms-info-foreground: 0 0% 100%;
+  --ms-success: 152 56% 39%;
+  --ms-success-foreground: 0 0% 100%;
+  --ms-warning: 38 64% 46%;
+  --ms-warning-foreground: 0 0% 9%;
+  --ms-diff-added: 152 50% 36%;
+  --ms-diff-removed: 0 58% 48%;
+  --ms-highlight: 50 60% 72%;
+  --ms-highlight-foreground: 0 0% 0%;
+  --inline-code-bg: hsl(var(--ms-secondary));
+  --inline-code-fg: hsl(var(--ms-foreground) / 0.75);
+  --inline-code-border: hsl(var(--ms-border) / 0.9);
+  --code-bg: #fff;
+  --code-fg: hsl(var(--ms-foreground));
+  --code-border: hsl(var(--ms-border));
+  --code-header-bg: hsl(var(--ms-secondary));
+  --code-selection-bg: hsl(var(--ms-accent) / 0.3);
+  --code-line-number: hsl(var(--ms-muted-foreground));
+  --code-action-fg: hsl(var(--ms-muted-foreground));
+  --code-action-hover-bg: hsl(var(--ms-accent));
+  --code-action-hover-fg: hsl(var(--ms-accent-foreground));
+  --code-action-active-bg: hsl(var(--ms-primary));
+  --code-action-active-fg: hsl(var(--ms-primary-foreground));
+  --table-border: hsl(var(--ms-border));
+  --table-header-bg: hsl(var(--ms-muted));
+  --markstream-code-theme-bg: #fff;
+  --markstream-code-theme-fg: hsl(var(--ms-foreground));
+  --markstream-code-fallback-bg: #fff;
+  --markstream-code-fallback-fg: hsl(var(--ms-foreground));
+  color: hsl(var(--ms-foreground));
+}
+
+html.dark .page-export-source .markstream-vue :is(pre, .code-block-container, .pre-code-block),
+.page-export-source .markstream-vue :is(pre, .code-block-container, .pre-code-block) {
+  --markstream-code-theme-bg: #fff;
+  --markstream-code-theme-fg: hsl(var(--ms-foreground));
+  --markstream-code-fallback-bg: #fff;
+  --markstream-code-fallback-fg: hsl(var(--ms-foreground));
+  background-color: var(--code-bg);
+  color: var(--code-fg);
+}

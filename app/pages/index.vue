@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
+import '~/assets/reading-export.css'
 import type { ReadingFont } from '~/constants/reading'
 import { DEFAULT_READING_FONT, READING_EXPORT_SURFACE_WIDTH } from '~/constants/reading'
 import { appName } from '~/constants'
@@ -447,13 +448,6 @@ html.dark .reading-chrome__action:hover {
   width: 100%;
   max-width: 42rem;
   margin: 0;
-}
-
-/* 正文用浅色字，表头仍跟 markstream 主题走 */
-.page-export-source :deep(.table-node thead th),
-.page-export-source :deep(.table-node thead th .text-node),
-.page-export-source :deep(.table-node thead th span) {
-  color: hsl(var(--ms-foreground));
 }
 </style>
 
