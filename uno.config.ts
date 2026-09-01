@@ -27,9 +27,13 @@ export default defineConfig({
         sans: 'DM Sans',
         serif: 'DM Serif Display',
         mono: 'DM Mono',
+        brand: 'Noto Serif SC',
       },
       processors: createLocalFontProcessor(),
     }),
+  ],
+  safelist: [
+    'font-brand',
   ],
   transformers: [
     transformerDirectives(),

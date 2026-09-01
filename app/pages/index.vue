@@ -3,6 +3,7 @@ import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
 import type { ReadingFont } from '~/constants/reading'
 import { DEFAULT_READING_FONT } from '~/constants/reading'
+import { appName } from '~/constants'
 
 definePageMeta({
   layout: 'home',
@@ -103,7 +104,7 @@ onMounted(() => {
       v-if="!isReadingView"
       class="flex items-center justify-between gap-3 px-3 py-2 border-b border-gray-200 dark:border-gray-700"
     >
-      <span class="text-sm font-medium text-teal-800 dark:text-teal-300">one-page</span>
+      <span class="app-brand font-brand">{{ appName }}</span>
       <div class="flex items-center gap-2">
         <span v-if="copyError" class="text-xs text-red-500">{{ copyError }}</span>
         <button
@@ -209,6 +210,17 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.app-brand {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: rgb(28 25 23);
+}
+
+html.dark .app-brand {
+  color: rgb(245 245 244);
+}
+
 .font-toggle {
   border: 0;
   background: transparent;
