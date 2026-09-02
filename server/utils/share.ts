@@ -7,6 +7,21 @@ const MAX_CONTENT_LENGTH = 500_000
 export interface SharePayload {
   content: string
   font: ReadingFont
+  expiresAt?: number
+}
+
+function resolveExpiresAt(data: { expiresAt?: unknown, createdAt?: unknown }) {
+  if (typeof data.expiresAt === 'number')
+    return data.expiresAt
+
+  if (typeof data.createdAt === 'number')
+    return data.createdAt + SHARE_TTL_SECONDS * 1000
+
+  return undefined
+}
+
+function isShareExpired(payload: SharePayload) {
+  return typeof payload.expiresAt === 'number' && Date.now() > payload.expiresAt
 }
 
 function readEnv(key: string) {
@@ -66,9 +81,11 @@ function normalizeSharePayload(raw: unknown): SharePayload | null {
     try {
       const parsed = JSON.parse(raw) as { content?: unknown, font?: unknown }
       if (typeof parsed.content === 'string') {
+        const expiresAt = resolveExpiresAt(parsed as { expiresAt?: unknown, createdAt?: unknown })
         return {
           content: parsed.content,
           font: assertShareFont(parsed.font),
+          ...(expiresAt !== undefined && { expiresAt }),
         }
       }
     }
@@ -86,13 +103,15 @@ function normalizeSharePayload(raw: unknown): SharePayload | null {
   }
 
   if (typeof raw === 'object' && raw !== null && 'content' in raw) {
-    const data = raw as { content?: unknown, font?: unknown }
+    const data = raw as { content?: unknown, font?: unknown, expiresAt?: unknown, createdAt?: unknown }
     if (typeof data.content !== 'string' || !data.content.trim())
       return null
 
+    const expiresAt = resolveExpiresAt(data)
     return {
       content: data.content,
       font: assertShareFont(data.font),
+      ...(expiresAt !== undefined && { expiresAt }),
     }
   }
 
@@ -108,7 +127,8 @@ function storageUnavailable() {
 
 export async function saveShare(content: string, font: ReadingFont = DEFAULT_READING_FONT) {
   const id = createShareId()
-  const payload: SharePayload = { content, font }
+  const expiresAt = Date.now() + SHARE_TTL_SECONDS * 1000
+  const payload: SharePayload = { content, font, expiresAt }
   const redis = getRedis()
 
   if (redis) {
@@ -120,7 +140,7 @@ export async function saveShare(content: string, font: ReadingFont = DEFAULT_REA
     storageUnavailable()
 
   const storage = useStorage('shares')
-  await storage.setItem(`${id}.json`, { ...payload, createdAt: Date.now() })
+  await storage.setItem(`${id}.json`, payload)
   return id
 }
 
@@ -129,7 +149,10 @@ export async function getShare(id: string) {
 
   if (redis) {
     const raw = await redis.get(`share:${id}`)
-    return normalizeSharePayload(raw)
+    const payload = normalizeSharePayload(raw)
+    if (!payload || isShareExpired(payload))
+      return null
+    return payload
   }
 
   if (isVercel())
@@ -137,5 +160,8 @@ export async function getShare(id: string) {
 
   const storage = useStorage('shares')
   const data = await storage.getItem<SharePayload & { createdAt?: number }>(`${id}.json`)
-  return normalizeSharePayload(data)
+  const payload = normalizeSharePayload(data)
+  if (!payload || isShareExpired(payload))
+    return null
+  return payload
 }
