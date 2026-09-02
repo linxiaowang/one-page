@@ -148,18 +148,21 @@ onUnmounted(() => {
   >
     <header
       v-if="!isReadingView"
-      class="editor-header flex flex-col gap-2 px-3 py-2 border-b border-gray-200 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+      class="editor-header flex flex-col gap-2 border-b border-gray-200 px-3 py-2 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
     >
-      <NuxtLink to="/" class="app-brand flex shrink-0 items-center gap-2">
-        <img
-          src="/logo.png"
-          alt=""
-          class="app-brand__logo h-7 w-7 rounded-[6px]"
-          width="28"
-          height="28"
-        >
-        <span class="font-brand">{{ appName }}</span>
-      </NuxtLink>
+      <div class="editor-header__brand-row flex w-full min-w-0 items-center justify-between gap-3 sm:w-auto sm:flex-1">
+        <NuxtLink to="/" class="app-brand flex min-w-0 shrink items-center gap-2">
+          <img
+            src="/logo.png"
+            alt=""
+            class="app-brand__logo h-7 w-7 shrink-0 rounded-[6px]"
+            width="28"
+            height="28"
+          >
+          <span class="font-brand truncate">{{ appName }}</span>
+        </NuxtLink>
+        <ShareAuthHeader v-if="showEditor" class="shrink-0" />
+      </div>
       <div class="editor-header__actions flex w-full flex-col gap-1 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-2">
         <span v-if="copyError || exportError || importError" class="editor-header__error w-full text-xs text-red-500 sm:w-auto">{{ copyError || exportError || importError }}</span>
         <div class="editor-header__toolbar flex w-full items-center justify-between gap-x-2 sm:w-auto sm:justify-end sm:gap-2">
@@ -184,7 +187,6 @@ onUnmounted(() => {
             </button>
           </div>
           <div class="editor-header__tools flex shrink-0 items-center gap-x-2 sm:contents">
-            <ShareAuthHeader v-if="showEditor" />
             <button
               v-if="showEditor && hasContent"
               type="button"
