@@ -419,8 +419,18 @@ html.dark .reading-chrome__action:hover {
   --ms-font-sans: 'PingFang SC', 'Heiti SC', 'Microsoft YaHei', sans-serif;
 }
 
+.content-font--heiti :deep(.markstream-vue) {
+  --ms-font-sans: 'PingFang SC', 'Heiti SC', 'Microsoft YaHei', sans-serif;
+  font-family: var(--ms-font-sans);
+}
+
 .content-font--songti {
   --ms-font-sans: 'Songti SC', 'STSong', 'SimSun', serif;
+}
+
+.content-font--songti :deep(.markstream-vue) {
+  --ms-font-sans: 'Songti SC', 'STSong', 'SimSun', serif;
+  font-family: var(--ms-font-sans);
 }
 
 .editor-layout {

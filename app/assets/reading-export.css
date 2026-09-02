@@ -67,3 +67,13 @@ html.dark .page-export-source .markstream-vue :is(pre, .code-block-container, .p
   background-color: var(--code-bg);
   color: var(--code-fg);
 }
+
+.page-export-source .content-font--heiti .markstream-vue {
+  --ms-font-sans: 'PingFang SC', 'Heiti SC', 'Microsoft YaHei', sans-serif;
+  font-family: var(--ms-font-sans);
+}
+
+.page-export-source .content-font--songti .markstream-vue {
+  --ms-font-sans: 'Songti SC', 'STSong', 'SimSun', serif;
+  font-family: var(--ms-font-sans);
+}
