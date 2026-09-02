@@ -32,6 +32,14 @@ const {
 } = useShareLink(content, readingFont)
 
 const { exporting, exportError, exportLongImage } = usePageImageExport()
+const {
+  importError,
+  isDragging,
+  onDragEnter,
+  onDragLeave,
+  onDragOver,
+  onDrop,
+} = useMarkdownFileImport(content)
 const exportSourceRef = ref<HTMLElement | null>(null)
 
 const isReadingView = computed(() => isSharedView.value && !showEditor.value)
@@ -39,6 +47,7 @@ const isReadingView = computed(() => isSharedView.value && !showEditor.value)
 async function downloadPageImage() {
   copyError.value = ''
   exportError.value = ''
+  importError.value = ''
   await nextTick()
   await nextTick()
 
@@ -137,7 +146,7 @@ onUnmounted(() => {
     >
       <span class="app-brand font-brand shrink-0">{{ appName }}</span>
       <div class="editor-header__actions flex w-full flex-col gap-1 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-2">
-        <span v-if="copyError || exportError" class="editor-header__error w-full text-xs text-red-500 sm:w-auto">{{ copyError || exportError }}</span>
+        <span v-if="copyError || exportError || importError" class="editor-header__error w-full text-xs text-red-500 sm:w-auto">{{ copyError || exportError || importError }}</span>
         <div class="editor-header__toolbar flex w-full items-center justify-between gap-x-2 sm:w-auto sm:justify-end sm:gap-2">
           <div class="editor-header__fonts flex items-center gap-x-2 sm:contents">
             <button
@@ -189,7 +198,15 @@ onUnmounted(() => {
       加载中…
     </div>
 
-    <div v-else-if="showEditor" class="editor-layout flex flex-1 min-h-0 flex-col sm:flex-row gap-3 p-3">
+    <div
+      v-else-if="showEditor"
+      class="editor-layout relative flex flex-1 min-h-0 flex-col sm:flex-row gap-3 p-3"
+      :class="{ 'editor-layout--dragging': isDragging }"
+      @dragenter="onDragEnter"
+      @dragleave="onDragLeave"
+      @dragover="onDragOver"
+      @drop="onDrop"
+    >
       <textarea
         v-model="content"
         class="editor-input p-4 border-2 border-gray-300 dark:border-gray-600 rounded-md min-h-0 flex-1 w-full resize-none bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 sm:h-full"
@@ -435,6 +452,28 @@ html.dark .reading-chrome__action:hover {
 
 .editor-layout {
   overflow: hidden;
+}
+
+.editor-layout--dragging::after {
+  content: '松开以导入 .md / .txt';
+  position: absolute;
+  inset: 0.75rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed rgb(15 118 110 / 0.55);
+  border-radius: 0.375rem;
+  background: rgb(240 253 250 / 0.92);
+  color: rgb(15 118 110);
+  font-size: 0.875rem;
+  pointer-events: none;
+}
+
+html.dark .editor-layout--dragging::after {
+  border-color: rgb(94 234 212 / 0.55);
+  background: rgb(4 47 46 / 0.92);
+  color: rgb(94 234 212);
 }
 
 @media (max-width: 639px) {
