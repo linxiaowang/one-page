@@ -11,5 +11,6 @@ export default defineEventHandler(async (event) => {
   if (!data)
     throw createError({ statusCode: 404, statusMessage: 'Share not found' })
 
-  return data
+  const { userId: _userId, ...publicData } = data
+  return publicData
 })

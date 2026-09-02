@@ -150,7 +150,16 @@ onUnmounted(() => {
       v-if="!isReadingView"
       class="editor-header flex flex-col gap-2 px-3 py-2 border-b border-gray-200 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
     >
-      <span class="app-brand font-brand shrink-0">{{ appName }}</span>
+      <NuxtLink to="/" class="app-brand flex shrink-0 items-center gap-2">
+        <img
+          src="/logo.png"
+          alt=""
+          class="app-brand__logo h-7 w-7 rounded-[6px]"
+          width="28"
+          height="28"
+        >
+        <span class="font-brand">{{ appName }}</span>
+      </NuxtLink>
       <div class="editor-header__actions flex w-full flex-col gap-1 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-2">
         <span v-if="copyError || exportError || importError" class="editor-header__error w-full text-xs text-red-500 sm:w-auto">{{ copyError || exportError || importError }}</span>
         <div class="editor-header__toolbar flex w-full items-center justify-between gap-x-2 sm:w-auto sm:justify-end sm:gap-2">
@@ -175,6 +184,7 @@ onUnmounted(() => {
             </button>
           </div>
           <div class="editor-header__tools flex shrink-0 items-center gap-x-2 sm:contents">
+            <ShareAuthHeader v-if="showEditor" />
             <button
               v-if="showEditor && hasContent"
               type="button"
@@ -319,10 +329,18 @@ onUnmounted(() => {
 
 <style scoped>
 .app-brand {
+  color: rgb(28 25 23);
+  text-decoration: none;
+}
+
+.app-brand .font-brand {
   font-size: 1.0625rem;
   font-weight: 600;
   letter-spacing: 0.1em;
-  color: rgb(28 25 23);
+}
+
+.app-brand__logo {
+  display: block;
 }
 
 html.dark .app-brand {

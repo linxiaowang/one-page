@@ -6,6 +6,7 @@ export default defineNuxtConfig({
     '@unocss/nuxt',
     '@nuxtjs/color-mode',
     '@nuxt/eslint',
+    'nuxt-auth-utils',
   ],
 
   devtools: {
@@ -17,6 +18,7 @@ export default defineNuxtConfig({
       viewport: 'width=device-width,initial-scale=1',
       link: [
         { rel: 'icon', href: '/favicon.ico', sizes: 'any' },
+        { rel: 'icon', type: 'image/png', href: '/favicon-32.png', sizes: '32x32' },
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
       ],
@@ -60,6 +62,10 @@ export default defineNuxtConfig({
       shares: {
         driver: 'fs',
         base: './.data/shares',
+      },
+      'user-shares': {
+        driver: 'fs',
+        base: './.data/user-shares',
       },
     },
   },

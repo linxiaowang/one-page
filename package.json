@@ -38,6 +38,7 @@
   "dependencies": {
     "@upstash/redis": "^1.38.3",
     "markstream-vue": "catalog:frontend",
-    "modern-screenshot": "^4.7.0"
+    "modern-screenshot": "^4.7.0",
+    "nuxt-auth-utils": "^0.5.30"
   }
 }

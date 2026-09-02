@@ -1,5 +1,8 @@
-import { Redis } from '@upstash/redis'
-import { DEFAULT_READING_FONT, normalizeReadingFont, type ReadingFont } from '../../app/constants/reading'
+import type { ReadingFont } from '../../app/constants/reading'
+import { DEFAULT_READING_FONT, normalizeReadingFont } from '../../app/constants/reading'
+import { resolvePageTitleFromMarkdown } from '../../app/utils/markdownTitle'
+import { getRedis, isVercel, storageUnavailable } from './kv'
+import { indexUserShare } from './userShares'
 
 const SHARE_TTL_SECONDS = 60 * 60 * 24 * 90
 const MAX_CONTENT_LENGTH = 500_000
@@ -8,6 +11,8 @@ export interface SharePayload {
   content: string
   font: ReadingFont
   expiresAt?: number
+  createdAt?: number
+  userId?: number
 }
 
 function resolveExpiresAt(data: { expiresAt?: unknown, createdAt?: unknown }) {
@@ -22,37 +27,6 @@ function resolveExpiresAt(data: { expiresAt?: unknown, createdAt?: unknown }) {
 
 function isShareExpired(payload: SharePayload) {
   return typeof payload.expiresAt === 'number' && Date.now() > payload.expiresAt
-}
-
-function readEnv(key: string) {
-  return process.env[key]
-}
-
-function getRedisConfig() {
-  const config = useRuntimeConfig()
-
-  const url = config.kvRestApiUrl
-    || readEnv('KV_REST_API_URL')
-    || readEnv('UPSTASH_REDIS_REST_URL')
-
-  const token = config.kvRestApiToken
-    || readEnv('KV_REST_API_TOKEN')
-    || readEnv('UPSTASH_REDIS_REST_TOKEN')
-
-  return { url, token }
-}
-
-function getRedis() {
-  const { url, token } = getRedisConfig()
-
-  if (!url || !token)
-    return null
-
-  return new Redis({ url, token })
-}
-
-function isVercel() {
-  return Boolean(process.env.VERCEL)
 }
 
 function createShareId() {
@@ -79,12 +53,20 @@ function normalizeSharePayload(raw: unknown): SharePayload | null {
 
   if (typeof raw === 'string') {
     try {
-      const parsed = JSON.parse(raw) as { content?: unknown, font?: unknown }
+      const parsed = JSON.parse(raw) as {
+        content?: unknown
+        font?: unknown
+        expiresAt?: unknown
+        createdAt?: unknown
+        userId?: unknown
+      }
       if (typeof parsed.content === 'string') {
-        const expiresAt = resolveExpiresAt(parsed as { expiresAt?: unknown, createdAt?: unknown })
+        const expiresAt = resolveExpiresAt(parsed)
         return {
           content: parsed.content,
           font: assertShareFont(parsed.font),
+          ...(typeof parsed.createdAt === 'number' && { createdAt: parsed.createdAt }),
+          ...(typeof parsed.userId === 'number' && { userId: parsed.userId }),
           ...(expiresAt !== undefined && { expiresAt }),
         }
       }
@@ -103,7 +85,13 @@ function normalizeSharePayload(raw: unknown): SharePayload | null {
   }
 
   if (typeof raw === 'object' && raw !== null && 'content' in raw) {
-    const data = raw as { content?: unknown, font?: unknown, expiresAt?: unknown, createdAt?: unknown }
+    const data = raw as {
+      content?: unknown
+      font?: unknown
+      expiresAt?: unknown
+      createdAt?: unknown
+      userId?: unknown
+    }
     if (typeof data.content !== 'string' || !data.content.trim())
       return null
 
@@ -111,6 +99,8 @@ function normalizeSharePayload(raw: unknown): SharePayload | null {
     return {
       content: data.content,
       font: assertShareFont(data.font),
+      ...(typeof data.createdAt === 'number' && { createdAt: data.createdAt }),
+      ...(typeof data.userId === 'number' && { userId: data.userId }),
       ...(expiresAt !== undefined && { expiresAt }),
     }
   }
@@ -118,29 +108,43 @@ function normalizeSharePayload(raw: unknown): SharePayload | null {
   return null
 }
 
-function storageUnavailable() {
-  throw createError({
-    statusCode: 503,
-    statusMessage: '分享存储未就绪，请在 Vercel 连接 Upstash Redis 后重新部署',
-  })
-}
-
-export async function saveShare(content: string, font: ReadingFont = DEFAULT_READING_FONT) {
+export async function saveShare(
+  content: string,
+  font: ReadingFont = DEFAULT_READING_FONT,
+  userId?: number,
+) {
   const id = createShareId()
-  const expiresAt = Date.now() + SHARE_TTL_SECONDS * 1000
-  const payload: SharePayload = { content, font, expiresAt }
+  const createdAt = Date.now()
+  const expiresAt = createdAt + SHARE_TTL_SECONDS * 1000
+  const payload: SharePayload = {
+    content,
+    font,
+    expiresAt,
+    createdAt,
+    ...(userId !== undefined && { userId }),
+  }
   const redis = getRedis()
 
   if (redis) {
     await redis.set(`share:${id}`, JSON.stringify(payload), { ex: SHARE_TTL_SECONDS })
-    return id
+  }
+  else if (isVercel()) {
+    storageUnavailable()
+  }
+  else {
+    const storage = useStorage('shares')
+    await storage.setItem(`${id}.json`, payload)
   }
 
-  if (isVercel())
-    storageUnavailable()
+  if (userId !== undefined) {
+    await indexUserShare(userId, {
+      id,
+      title: resolvePageTitleFromMarkdown(content),
+      createdAt,
+      expiresAt,
+    })
+  }
 
-  const storage = useStorage('shares')
-  await storage.setItem(`${id}.json`, payload)
   return id
 }
 
@@ -159,7 +163,7 @@ export async function getShare(id: string) {
     storageUnavailable()
 
   const storage = useStorage('shares')
-  const data = await storage.getItem<SharePayload & { createdAt?: number }>(`${id}.json`)
+  const data = await storage.getItem<SharePayload>(`${id}.json`)
   const payload = normalizeSharePayload(data)
   if (!payload || isShareExpired(payload))
     return null
