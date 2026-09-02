@@ -35,17 +35,26 @@ function pruneUserShares(entries: UserShareEntry[]) {
     .slice(0, MAX_USER_SHARES)
 }
 
-export async function indexUserShare(userId: number, entry: UserShareEntry) {
+async function readUserShares(userId: number) {
   const redis = getRedis()
 
   if (redis) {
     const raw = await redis.get(userSharesKey(userId))
-    const current = normalizeUserShares(typeof raw === 'string' ? JSON.parse(raw) : raw)
-    const next = pruneUserShares([
-      entry,
-      ...current.filter(item => item.id !== entry.id),
-    ])
-    await redis.set(userSharesKey(userId), JSON.stringify(next))
+    return normalizeUserShares(typeof raw === 'string' ? JSON.parse(raw) : raw)
+  }
+
+  if (isVercel())
+    storageUnavailable()
+
+  const storage = useStorage('user-shares')
+  return normalizeUserShares(await storage.getItem(`${userId}.json`))
+}
+
+async function writeUserShares(userId: number, entries: UserShareEntry[]) {
+  const redis = getRedis()
+
+  if (redis) {
+    await redis.set(userSharesKey(userId), JSON.stringify(entries))
     return
   }
 
@@ -53,25 +62,28 @@ export async function indexUserShare(userId: number, entry: UserShareEntry) {
     storageUnavailable()
 
   const storage = useStorage('user-shares')
-  const current = normalizeUserShares(await storage.getItem(`${userId}.json`))
+  await storage.setItem(`${userId}.json`, entries)
+}
+
+export async function indexUserShare(userId: number, entry: UserShareEntry) {
+  const current = await readUserShares(userId)
   const next = pruneUserShares([
     entry,
     ...current.filter(item => item.id !== entry.id),
   ])
-  await storage.setItem(`${userId}.json`, next)
+  await writeUserShares(userId, next)
 }
 
 export async function getUserShares(userId: number) {
-  const redis = getRedis()
+  return pruneUserShares(await readUserShares(userId))
+}
 
-  if (redis) {
-    const raw = await redis.get(userSharesKey(userId))
-    return pruneUserShares(normalizeUserShares(typeof raw === 'string' ? JSON.parse(raw) : raw))
-  }
+export async function removeUserShare(userId: number, shareId: string) {
+  const current = await readUserShares(userId)
+  const next = current.filter(item => item.id !== shareId)
+  if (next.length === current.length)
+    return false
 
-  if (isVercel())
-    storageUnavailable()
-
-  const storage = useStorage('user-shares')
-  return pruneUserShares(normalizeUserShares(await storage.getItem(`${userId}.json`)))
+  await writeUserShares(userId, next)
+  return true
 }

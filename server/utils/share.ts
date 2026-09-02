@@ -2,7 +2,9 @@ import type { ReadingFont } from '../../app/constants/reading'
 import { DEFAULT_READING_FONT, normalizeReadingFont } from '../../app/constants/reading'
 import { resolvePageTitleFromMarkdown } from '../../app/utils/markdownTitle'
 import { getRedis, isVercel, storageUnavailable } from './kv'
-import { indexUserShare } from './userShares'
+import { indexUserShare, removeUserShare } from './userShares'
+
+const SHARE_ID_PATTERN = /^[a-z0-9]{12}$/i
 
 const SHARE_TTL_SECONDS = 60 * 60 * 24 * 90
 const MAX_CONTENT_LENGTH = 500_000
@@ -45,6 +47,13 @@ export function assertShareContent(content: unknown): string {
 
 export function assertShareFont(font: unknown): ReadingFont {
   return normalizeReadingFont(font)
+}
+
+export function assertShareId(id: unknown): string {
+  if (typeof id !== 'string' || !SHARE_ID_PATTERN.test(id))
+    throw createError({ statusCode: 400, statusMessage: 'Invalid share id' })
+
+  return id
 }
 
 function normalizeSharePayload(raw: unknown): SharePayload | null {
@@ -148,15 +157,12 @@ export async function saveShare(
   return id
 }
 
-export async function getShare(id: string) {
+async function loadSharePayload(id: string) {
   const redis = getRedis()
 
   if (redis) {
     const raw = await redis.get(`share:${id}`)
-    const payload = normalizeSharePayload(raw)
-    if (!payload || isShareExpired(payload))
-      return null
-    return payload
+    return normalizeSharePayload(raw)
   }
 
   if (isVercel())
@@ -164,8 +170,40 @@ export async function getShare(id: string) {
 
   const storage = useStorage('shares')
   const data = await storage.getItem<SharePayload>(`${id}.json`)
-  const payload = normalizeSharePayload(data)
+  return normalizeSharePayload(data)
+}
+
+async function deleteSharePayload(id: string) {
+  const redis = getRedis()
+
+  if (redis) {
+    await redis.del(`share:${id}`)
+    return
+  }
+
+  if (isVercel())
+    storageUnavailable()
+
+  const storage = useStorage('shares')
+  await storage.removeItem(`${id}.json`)
+}
+
+export async function getShare(id: string) {
+  const payload = await loadSharePayload(id)
   if (!payload || isShareExpired(payload))
     return null
   return payload
+}
+
+export async function deleteShare(id: string, userId: number) {
+  const payload = await loadSharePayload(id)
+
+  if (!payload)
+    throw createError({ statusCode: 404, statusMessage: 'Share not found' })
+
+  if (payload.userId !== userId)
+    throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
+
+  await deleteSharePayload(id)
+  await removeUserShare(userId, id)
 }

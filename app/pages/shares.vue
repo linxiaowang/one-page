@@ -15,6 +15,8 @@ interface ShareListItem {
 const { loggedIn, user, ready, clear } = useUserSession()
 const { copy, isSupported } = useClipboard()
 const copiedId = ref<string | null>(null)
+const deletingId = ref<string | null>(null)
+const deleteError = ref('')
 
 const { data, pending, error, refresh } = await useFetch<{ shares: ShareListItem[] }>('/api/share/mine', {
   immediate: false,
@@ -53,6 +55,34 @@ async function copyShareLink(id: string) {
     if (copiedId.value === id)
       copiedId.value = null
   }, 2000)
+}
+
+async function deleteShare(id: string, title: string) {
+  if (!import.meta.client)
+    return
+
+  if (!window.confirm(`确定删除「${title}」？删除后链接将立即失效。`))
+    return
+
+  deleteError.value = ''
+  deletingId.value = id
+
+  try {
+    const response = await fetch(`/api/share/${id}`, { method: 'DELETE' })
+    if (!response.ok) {
+      const body = await response.json().catch(() => null) as { statusMessage?: string } | null
+      deleteError.value = body?.statusMessage || '删除失败，请稍后重试'
+      return
+    }
+
+    await refresh()
+  }
+  catch {
+    deleteError.value = '删除失败，请稍后重试'
+  }
+  finally {
+    deletingId.value = null
+  }
 }
 
 useSeoMeta({
@@ -119,25 +149,33 @@ useSeoMeta({
         加载分享列表失败，请稍后重试。
       </div>
 
-      <div
-        v-else-if="!data?.shares.length"
-        class="shares-page__empty rounded-xl border border-dashed border-gray-300 px-6 py-16 text-center dark:border-gray-700"
-      >
-        <p class="mb-2 text-gray-700 dark:text-gray-200">
-          还没有分享记录
-        </p>
-        <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
-          登录后复制分享链接，会在这里自动收录。
-        </p>
-        <NuxtLink
-          to="/"
-          class="inline-flex items-center rounded-md border border-teal-700 px-4 py-2 text-sm text-teal-700 transition-colors hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
+      <template v-else>
+        <div
+          v-if="deleteError"
+          class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
         >
-          去写一篇
-        </NuxtLink>
-      </div>
+          {{ deleteError }}
+        </div>
 
-      <ul v-else class="space-y-3">
+        <div
+          v-if="!data?.shares.length"
+          class="shares-page__empty rounded-xl border border-dashed border-gray-300 px-6 py-16 text-center dark:border-gray-700"
+        >
+          <p class="mb-2 text-gray-700 dark:text-gray-200">
+            还没有分享记录
+          </p>
+          <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
+            登录后复制分享链接，会在这里自动收录。
+          </p>
+          <NuxtLink
+            to="/"
+            class="inline-flex items-center rounded-md border border-teal-700 px-4 py-2 text-sm text-teal-700 transition-colors hover:bg-teal-50 dark:border-teal-400 dark:text-teal-300 dark:hover:bg-teal-950"
+          >
+            去写一篇
+          </NuxtLink>
+        </div>
+
+        <ul v-else class="space-y-3">
         <li
           v-for="share in data.shares"
           :key="share.id"
@@ -169,10 +207,19 @@ useSeoMeta({
               >
                 打开
               </NuxtLink>
+              <button
+                type="button"
+                class="rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950"
+                :disabled="deletingId === share.id"
+                @click="deleteShare(share.id, share.title)"
+              >
+                {{ deletingId === share.id ? '删除中' : '删除' }}
+              </button>
             </div>
           </div>
         </li>
-      </ul>
+        </ul>
+      </template>
     </main>
   </div>
 </template>
