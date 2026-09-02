@@ -40,6 +40,12 @@ const {
   onDragOver,
   onDrop,
 } = useMarkdownFileImport(content)
+const {
+  layoutRef: editorLayoutRef,
+  isResizing: isResizingEditorPane,
+  layoutStyle: editorLayoutStyle,
+  startResize: startEditorPaneResize,
+} = useEditorPaneResize()
 const exportSourceRef = ref<HTMLElement | null>(null)
 
 const isReadingView = computed(() => isSharedView.value && !showEditor.value)
@@ -200,17 +206,37 @@ onUnmounted(() => {
 
     <div
       v-else-if="showEditor"
-      class="editor-layout relative flex flex-1 min-h-0 flex-col sm:flex-row gap-3 p-3"
-      :class="{ 'editor-layout--dragging': isDragging }"
+      ref="editorLayoutRef"
+      class="editor-layout relative flex flex-1 min-h-0 flex-col gap-3 p-3 sm:flex-row sm:gap-0"
+      :class="{
+        'editor-layout--dragging': isDragging,
+        'editor-layout--resizing': isResizingEditorPane,
+      }"
+      :style="editorLayoutStyle"
       @dragenter="onDragEnter"
       @dragleave="onDragLeave"
       @dragover="onDragOver"
       @drop="onDrop"
     >
-      <textarea
-        v-model="content"
-        class="editor-input p-4 border-2 border-gray-300 dark:border-gray-600 rounded-md min-h-0 flex-1 w-full resize-none bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 sm:h-full"
-        placeholder="在这里粘贴或输入 Markdown…"
+      <div class="editor-input-shell relative flex min-h-0 w-full flex-1 flex-col sm:h-full">
+        <textarea
+          v-model="content"
+          class="editor-input min-h-0 w-full flex-1 resize-none rounded-md border-2 border-gray-300 bg-white p-4 pb-9 text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+          placeholder="在这里粘贴或输入 Markdown…"
+        />
+        <p
+          v-if="!hasContent"
+          class="editor-import-hint pointer-events-none absolute inset-x-0 bottom-3 px-4 text-center text-xs text-gray-400 dark:text-gray-500"
+        >
+          支持拖入 .md / .txt 文件导入
+        </p>
+      </div>
+      <div
+        class="editor-resizer hidden sm:block"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="调整编辑区和预览区宽度"
+        @pointerdown="startEditorPaneResize"
       />
       <div class="editor-preview relative border-2 border-gray-300 dark:border-gray-600 rounded-md min-h-0 flex-1 w-full overflow-hidden bg-white dark:bg-gray-900 sm:h-full">
         <div
@@ -454,6 +480,56 @@ html.dark .reading-chrome__action:hover {
   overflow: hidden;
 }
 
+@media (min-width: 640px) {
+  .editor-input-shell {
+    flex: 0 0 var(--editor-split, 50%);
+    min-width: 0;
+  }
+
+  .editor-preview {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+.editor-resizer {
+  position: relative;
+  flex: 0 0 12px;
+  align-self: stretch;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.editor-resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  border-radius: 9999px;
+  background: transparent;
+  transform: translateX(-50%);
+  transition: background-color 0.15s ease;
+  pointer-events: none;
+}
+
+.editor-resizer:hover::after,
+.editor-layout--resizing .editor-resizer::after {
+  background: rgb(15 118 110 / 0.35);
+}
+
+html.dark .editor-resizer:hover::after,
+html.dark .editor-layout--resizing .editor-resizer::after {
+  background: rgb(94 234 212 / 0.35);
+}
+
+.editor-layout--resizing,
+.editor-layout--resizing * {
+  cursor: col-resize !important;
+}
+
 .editor-layout--dragging::after {
   content: '松开以导入 .md / .txt';
   position: absolute;
@@ -481,7 +557,7 @@ html.dark .editor-layout--dragging::after {
     overflow-y: auto;
   }
 
-  .editor-input {
+  .editor-input-shell {
     min-height: 42vh;
     flex: 0 0 auto;
   }
