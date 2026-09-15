@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
 import '~/assets/reading-export.css'
 import type { ReadingFont } from '~/constants/reading'
@@ -267,7 +266,7 @@ onUnmounted(() => {
             class="reading-content text-stone-900 dark:text-stone-200 content-font"
             :class="contentFontClass"
           >
-            <MarkdownRender
+            <ReadingMarkdown
               :content="content"
               final
             />
@@ -301,7 +300,7 @@ onUnmounted(() => {
           class="reading-content text-stone-900 dark:text-stone-200 content-font"
           :class="contentFontClass"
         >
-          <MarkdownRender
+          <ReadingMarkdown
             :content="content"
             final
           />
@@ -319,7 +318,7 @@ onUnmounted(() => {
           class="reading-content text-stone-900 content-font"
           :class="contentFontClass"
         >
-          <MarkdownRender
+          <ReadingMarkdown
             :content="content"
             final
           />
@@ -476,6 +475,24 @@ html.dark .reading-chrome__action:hover {
   --ms-flow-heading-2-mt: 2.25em;
   --ms-flow-heading-3-mt: 1.75em;
   --ms-flow-hr-y: 2.75em;
+}
+
+.reading-content :deep(.reading-markdown img) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.reading-content :deep(.table-node) {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+html.dark .reading-content :deep(.table-node th),
+html.dark .reading-content :deep(.table-node td) {
+  color: rgb(231 229 228);
 }
 
 .content-font--heiti {
